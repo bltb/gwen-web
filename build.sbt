@@ -4,6 +4,7 @@ import com.typesafe.sbt.packager.archetypes._
 
 import SonatypeKeys._
 
+
 lazy val gwen = ProjectRef(file("../gwen"), "gwen")
 
 val gwenWeb = project in file(".") dependsOn(gwen) 
@@ -62,3 +63,7 @@ mappings in (Compile, packageBin) ++= Seq(
   file("LICENSE") -> "LICENSE",
   file("NOTICE") -> "NOTICE"
 )
+
+enablePlugins(DockerPlugin)
+
+dockerAutoPackageJavaApplication()
