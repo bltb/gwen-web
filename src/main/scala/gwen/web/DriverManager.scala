@@ -26,6 +26,7 @@ import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.firefox.FirefoxProfile
+import org.openqa.selenium.phantomjs.PhantomJSDriver
 import org.openqa.selenium.ie.InternetExplorerDriver
 import org.openqa.selenium.remote.CapabilityType
 import org.openqa.selenium.remote.DesiredCapabilities
@@ -123,6 +124,7 @@ trait DriverManager extends LazyLogging {
     case "firefox" => firefox()
     case "ie" => ie()
     case "chrome" => chrome()
+    case "phantomjs" => phantomjs()
     case "safari" => safari()
     case _ => unsupportedWebDriverError(driverName)
   }
@@ -170,6 +172,8 @@ trait DriverManager extends LazyLogging {
   private[web] def chrome(): WebDriver = new ChromeDriver(chromeOptions)
   
   private[web] def firefox(): WebDriver = new FirefoxDriver(firefoxProfile)
+  
+  private[web] def phantomjs(): WebDriver = new PhantomJSDriver()
   
   private[web] def ie(): WebDriver = new InternetExplorerDriver(ieCapabilities)
   

@@ -6,7 +6,7 @@ import SonatypeKeys._
 
 lazy val gwen = ProjectRef(file("../gwen"), "gwen")
 
-val gwenWeb = project in file(".") dependsOn(gwen) 
+val gwenWeb = project in file(".") dependsOn(gwen) enablePlugins(PhantomJs)
 
 name := "gwen-web"
 
@@ -38,6 +38,8 @@ javaSource in Compile := baseDirectory.value / "src/main/scala"
 
 javaSource in Test := baseDirectory.value / "src/test/scala"
 
+javaOptions ++= PhantomJs.setup(baseDirectory.value)
+
 resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
@@ -47,6 +49,8 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % "test"
 
 libraryDependencies += "com.google.code.findbugs" % "jsr305" % "2.0.1" % "compile" 
+
+libraryDependencies += ("com.codeborne" % "phantomjsdriver" % "1.2.1")
 
 libraryDependencies += "org.seleniumhq.selenium" % "selenium-java" % "2.45.0" excludeAll(
   ExclusionRule(organization = "org.seleniumhq.selenium", name = "selenium-htmlunit-driver"),
