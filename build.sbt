@@ -1,16 +1,12 @@
-import com.typesafe.sbt.SbtGit._
-
-import com.typesafe.sbt.packager.archetypes._
-
-import SonatypeKeys._
-
+// Use file URI for gwen dep until sbt issue 1284 is fixed: https://github.com/sbt/sbt/issues/1284
 lazy val gwen = ProjectRef(file("../gwen"), "gwen")
+// lazy val gwen = ProjectRef(uri("git://github.com/gwen-interpreter/gwen.git"), "gwen")
 
 val gwenWeb = project in file(".") dependsOn(gwen) 
 
 name := "gwen-web"
 
-description := "An acceptance driven web automation engine."
+description := "A Gwen automation engine for the web"
 
 organization := "org.gweninterpreter"
 
@@ -18,9 +14,9 @@ organizationHomepage := Some(url("http://gweninterpreter.org"))
 
 startYear := Some(2014)
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.11.6", "2.10.4")
+crossPaths := false
 
 scalacOptions += "-feature"
 
@@ -28,9 +24,11 @@ scalacOptions += "-language:postfixOps"
 
 scalacOptions += "-deprecation"
 
+scalacOptions += "-target:jvm-1.7"
+
 licenses += "Apache License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.html")
 
-homepage := Some(url("http://gwen-interpreter.github.io/gwen-web/"))
+homepage := Some(url("https://github.com/gwen-interpreter/gwen-web"))
 
 EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
 
@@ -48,17 +46,14 @@ libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % "test"
 
 libraryDependencies += "com.google.code.findbugs" % "jsr305" % "2.0.1" % "compile" 
 
-libraryDependencies += "org.seleniumhq.selenium" % "selenium-java" % "2.45.0" excludeAll(
-  ExclusionRule(organization = "org.seleniumhq.selenium", name = "selenium-htmlunit-driver"),
-  ExclusionRule(organization = "net.java.dev.jna", name = "jna"),
-  ExclusionRule(organization = "net.java.dev.jna", name = "jna-platform")
+libraryDependencies += "org.seleniumhq.selenium" % "selenium-java" % "2.51.0" excludeAll(
+  ExclusionRule(organization = "org.seleniumhq.selenium", name = "selenium-htmlunit-driver")
 )
-
-libraryDependencies += "net.java.dev.jna" % "jna" % "4.1.0"
-
-libraryDependencies += "net.java.dev.jna" % "jna-platform" % "4.1.0"
 
 mappings in (Compile, packageBin) ++= Seq(
   file("LICENSE") -> "LICENSE",
-  file("NOTICE") -> "NOTICE"
+  file("NOTICE") -> "NOTICE",
+  file("LICENSE-THIRDPARTY") -> "LICENSE-THIRDPARTY",
+  file("CHANGELOG") -> "CHANGELOG"
 )
+

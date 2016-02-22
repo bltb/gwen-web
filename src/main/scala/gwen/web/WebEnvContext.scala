@@ -47,6 +47,7 @@ import gwen.errors._
 import scala.io.Source
 import scala.sys.process._
 import scala.collection.JavaConverters._
+import org.openqa.selenium.interactions.Actions
 
 /**
   * Defines the web environment context. This includes the configured selenium web
@@ -56,6 +57,8 @@ import scala.collection.JavaConverters._
   */
 class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) extends EnvContext(options, scopes) with WebElementLocator with DriverManager with RegexSupport with XPathSupport {
 
+   Try(logger.info(s"SELENIUM_HOME = ${sys.env("SELENIUM_HOME")}"))
+  
    /** Resets the current context and closes the web browser. */
   override def reset() {
     super.reset()
@@ -65,6 +68,7 @@ class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) exten
   /** Closes the current web driver. */
   override def close() {
     quit()
+    super.close()
   }
   
   /**
@@ -210,26 +214,35 @@ class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) exten
     * @param elementBinding the web element locator binding
     * @param f the function to perform on the element
     */
-  private def withWebElement[T](action: Option[String], elementBinding: LocatorBinding)(f: WebElement => T): T =
-     try {
-       val webElement = locate(this, elementBinding)
-       action.foreach { actionString =>
-         logger.debug(s"${actionString match {
-           case "click" => "Clicking"
-           case "submit" => "Submitting"
-           case "check" => "Checking"
-           case "uncheck" => "Unchecking"
+  private def withWebElement[T](action: Option[String], elementBinding: LocatorBinding)(f: WebElement => T): T = {
+    val wHandle = elementBinding.container.map(_ => withWebDriver(_.getWindowHandle))
+    try {
+      val webElement = locate(this, elementBinding)
+      action.foreach { actionString =>
+        logger.debug(s"${actionString match {
+          case "click" => "Clicking"
+          case "submit" => "Submitting"
+          case "check" => "Checking"
+          case "uncheck" => "Unchecking"
          }} ${elementBinding.element}")
-       }
-       f(webElement) tap { result =>
-         if (WebSettings.`gwen.web.capture.screenshots`) {
-           captureScreenshot()
-         }
-       }
-     } catch {
-       case _: WebDriverException => f(locate(this, elementBinding))
-     }
-
+      }
+      f(webElement) tap { result =>
+        if (WebSettings.`gwen.web.capture.screenshots`) {
+          captureScreenshot()
+        }
+      }
+    } catch {
+      case _: WebDriverException =>
+        f(locate(this, elementBinding))
+    } finally {
+      wHandle foreach { handle =>
+        withWebDriver { driver =>
+          driver.switchTo().window(handle)
+        }
+      }
+    }
+  }
+  
   /**
     * Gets a bound value from memory. A search for the value is made in 
     * the following order and the first value found is returned:
@@ -240,7 +253,8 @@ class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) exten
     *  
     * @param name the name of the bound value to find
     */
-  override def getBoundReferenceValue(name: String): String = { 
+  override def getBoundReferenceValue(name: String): String = {
+    if (name == "the current URL") captureCurrentUrl()
     (Try(getLocatorBinding(name)) match {
       case Success(binding) =>
         Try(execute(getElementText(binding)).get) match {
@@ -252,6 +266,11 @@ class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) exten
       logger.debug(s"getBoundReferenceValue(${name})='${value}'")
     }
   }
+  
+  def captureCurrentUrl() = 
+    featureScope.set("the current URL", execute(withWebDriver(_.getCurrentUrl()) tap { content => 
+      addAttachment("the current URL", "txt", content) 
+    }).getOrElse("$[currentUrl]"))
   
   /**
     * Gets the text value of a web element on the current page. 
@@ -348,8 +367,6 @@ class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) exten
     *  - name/regex
     *  
     * @param name the name of the bound attribute to find
-    * @throws `gwen.errors.UnboundAttributeException` if no value is bound 
-    *          to the given name
     */
   def getAttribute(name: String): String = 
     (scopes.getOpt(name) match {
@@ -395,7 +412,12 @@ class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) exten
         val lookupBinding = interpolate(s"$element/locator/$locator")(getBoundReferenceValue)
         scopes.getOpt(lookupBinding) match {
           case Some(expression) =>
-            LocatorBinding(element, locator, interpolate(expression)(getBoundReferenceValue))
+            val expr = interpolate(expression)(getBoundReferenceValue)
+            val container = scopes.getOpt(interpolate(s"$element/locator/$locator/container")(getBoundReferenceValue))
+            if (isDryRun) {
+              container.foreach(c => getLocatorBinding(c))
+            }
+            LocatorBinding(element, locator, expr, container)
           case None => throw new LocatorBindingException(element, s"locator lookup binding not found: ${lookupBinding}")
         }
       case None => throw new LocatorBindingException(element, s"locator binding not found: ${locatorBinding}")
@@ -516,10 +538,27 @@ class WebEnvContext(val options: GwenOptions, val scopes: ScopedDataStack) exten
       action match {
         case "click" => webElement.click
         case "submit" => webElement.submit
-        case "check" if (!webElement.isSelected()) => webElement.sendKeys(Keys.SPACE)
-        case "uncheck" if (webElement.isSelected()) => webElement.sendKeys(Keys.SPACE)
+        case "check" => if (!webElement.isSelected()) webElement.sendKeys(Keys.SPACE)
+        case "uncheck" => if (webElement.isSelected()) webElement.sendKeys(Keys.SPACE)
       }
       bindAndWait(elementBinding.element, action, "true")
+    }
+  }
+  
+  def performActionIn(action: String, elementBinding: LocatorBinding, contextBinding: LocatorBinding) {
+    withWebElement(action, contextBinding) { contextElement =>
+      withWebElement(action, elementBinding) { webElement =>
+        withWebDriver { driver =>
+          var actions = new Actions(driver).moveToElement(contextElement).moveToElement(webElement)
+          action match {
+            case "click" => actions = actions.click
+            case "check" => if (!webElement.isSelected()) actions = actions.sendKeys(Keys.SPACE)
+            case "uncheck" => if (webElement.isSelected()) actions = actions.sendKeys(Keys.SPACE)
+          }
+          actions.build.perform()
+        }
+        bindAndWait(elementBinding.element, action, "true")
+      }
     }
   }
   

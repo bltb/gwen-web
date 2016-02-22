@@ -1,0 +1,143 @@
+1.2.0
+=====
+Feb 17, 2016, 12:07 AM GMT+11 (AEDT)
+- Added new DSLs for starting and closing browser sessions:
+  - I start a new browser session
+  - I close the current browser session
+- Added support for performing actions on context sensitive elements 
+  that are available only when another element is moved into first. 
+  This is supported through the following DSL: 
+  - I <click|check|uncheck> <element> of <context>
+   
+1.1.1
+=====
+Feb 16, 2016, 12:43 PM GMT+11 (AEDT)
+- Fixed #17 - Do nothing when checking/unchecking checkboxes or radio 
+  buttons that are already checked or unchecked respectively 
+  - Solution was to move the guards from the check and uncheck 
+    pattern match clauses to their bodies instead
+
+1.1.0
+=====
+Feb 11, 2016, 11:47 PM GMT+11 (AEDT)
+- Added support for chaining locators through new DSL:
+  - <element> can be located by <locator> "<expression>" in <container>
+  - Where <container> can be 
+    - An element
+      - In this case <element> is located within the <container> element
+    - A frame
+      - In this case <element> is located within the page in the <container> 
+        frame  
+      - The WebEnvContext.withElement function will restore the previous window 
+        in the web driver if the location of the element within the frame 
+        fails on the first attempt. 
+  - All element lookups and operations now occur inside the
+    WebEnvContext.withElement function. This is where all 1st and 2nd lookup 
+    attempts occur and where switching to the previous window is performed 
+    when operations on elements are completed. The web engine no longer 
+    calls the locator methods directly (it now calls withElement instead).
+- Simplified assertion error messages
+- Update selenium webdriver from v2.48.1 to v2.51.0
+- Update Gwen from v1.0.1 to v[1.0.3](https://github.com/gwen-interpreter/gwen/releases/tag/v1.0.3)
+
+1.0.2
+=====
+Jan 29, 2016, 5:13 PM GMT+11 (AEDT)
+- Fixed problem with 1.0.1 release which had a snapshot dependency to Gwen
+  in the maven POM file.
+
+1.0.1
+=====
+Jan 26, 2016, 11:43 PM GMT+11 (AEDT)
+- Resolved gwen-interpreter/gwen#15 - Use compact report attachment names
+- Update Gwen from v1.0.0 to v[1.0.1](https://github.com/gwen-interpreter/gwen/releases/tag/v1.0.1)
+    
+1.0.0
+=====
+Jan 19, 2016, 11:51 PM GMT+11 (AEDT) 
+First gwen-web release.
+- Uses:
+  - gwen.interpreger gwen v1.0.0
+  - org.seleniumhq.selenium selenium-java v2.48.1
+- Requires:
+  - Java 7+
+  - A Web Browser. The following are supported:
+    - Firefox
+    - Chrome
+      - Requires native web driver
+    - Safari
+      - Requires safari extension
+    - IE
+      - Requires native web driver
+- Introduces:
+  - Web engine DSL:
+    - I am on the <page>
+    - the url will be "<url>"
+    - the url will be defined by property|setting "<name>"
+    - I navigate to the <page>
+    - I navigate to "<url>"
+    - I scroll to the top|bottom of <element>
+    - <element> can be located by id|name|tag name|css selector|xpath|class name|link text|partial link text|javascript "<expression>"
+    - the page title should|should not be|contain|start with|end with|match regex|match xpath "<expression>"
+    - the page title should|should not be|contain|start with|end with|match regex|match xpath <attribute>
+    - <element> should|should not be displayed|hidden|checked|unchecked|enabled|disabled
+    - <element|attribute> should|should not be|contain|start with|end with|match regex|match xpath "<expression>"
+    - <element|attribute> should|should not be|contain|start with|end with|match regex|match xpath <attribute>
+    - <dropdown> <text|value> should|should not be|contain|start with|end with|match regex|match xpath "<expression>"
+    - <dropdown> <text|value> should|should not be|contain|start with|end with|match regex|match xpath <attribute>
+    - I capture the text|node|nodeset in <element|attribute|property> by xpath "<expression>" as <attribute>
+    - I capture the text in <element|attribute|property> by regex "<expression>" as <attribute>
+    - I capture the current URL
+    - I capture the current URL as <attribute>
+    - I capture <element|attribute|property> as <attribute>
+    - I capture <element|attribute|property>
+    - I capture <dropdown> <text|value> as <attribute>
+    - I capture <dropdown> <text|value>
+    - my <name> property|setting is|will be "<value>"
+    - <attribute> is|will be defined by javascript|system process|property|setting "<expression>"
+    - <attribute> is|will be defined by the text|node|nodeset in <source> by xpath "<expression>"
+    - <attribute> is|will be defined in <source> by regex "<expression>"
+    - <attribute> is|will be "<value>"
+    - I wait for <element> text for <duration> second|seconds
+    - I wait for <element> text
+    - I wait for <element> for <duration> second|seconds
+    - I wait for <element>
+    - I clear <element>
+    - I press enter|tab in <element>
+    - I enter|type "<value>" in <element>
+    - I enter|type <attribute> in <element>
+    - I select the <position>st|nd|rd|th option in <element>
+    - I select "<value>" in <element>
+    - I select "<value>" in <element> by value
+    - I select <attribute> in <element>
+    - I select <attribute> in <element> by value
+    - I click|submit|check|uncheck <element>
+    - I wait <duration> second|seconds when <element> is clicked|submitted|checked|unchecked|selected|typed|entered|tabbed|cleared
+    - I wait until <condition> when <element> is clicked|submitted|checked|unchecked|selected|typed|entered|tabbed|cleared
+    - I wait until "<javascript>"
+    - I wait until <condition>
+    - I wait <duration> second|seconds
+    - I highlight|locate <element>
+    - I execute system process "<process>"
+    - I execute a unix system process "<process>"
+    - I refresh the current page
+    - I base64 decode <element|attribute> as <attribute>
+    - I base64 decode <element|attribute>
+    - <step> until <condition>
+    - <step> while <condition>
+  - Configuration settings:
+    - gwen.web.browser
+    - gwen.web.useragent
+    - gwen.web.authorize.plugins
+    - gwen.web.wait.seconds
+    - gwen.web.maximize
+    - gwen.web.throttle.msecs
+    - gwen.web.highlight.style
+    - gwen.web.capture.screenshots
+    - gwen.web.capture.screenshots.highlighting
+    - gwen.web.remote.url
+    - gwen.web.accept.untrusted.certs
+    - gwen.web.suppress.images (firefox only)
+    - gwen.web.chrome.extensions (chrome only)
+  - Interchangeable selenium implementation through SELENIUM_HOME environment variable
+  - Depends on: [Gwen 1.0.0](https://github.com/gwen-interpreter/gwen/releases/tag/v1.0.0)

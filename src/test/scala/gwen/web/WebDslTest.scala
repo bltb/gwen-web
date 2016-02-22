@@ -22,6 +22,10 @@ class WebDslTest extends FlatSpec {
     env.scopes.set("<dropdown>/locator/id", "id")
     env.scopes.set("<url>", "url")
     env.scopes.set("<condition>/javascript", "condition")
+    env.scopes.set("<container>/locator", "id");
+    env.scopes.set("<container>/locator/id", "id")
+    env.scopes.set("<context>/locator", "id")
+    env.scopes.set("<context>/locator/id", "id")
         
     val interpreter = new WebInterpreter
     withSetting("<name>", "name") {
@@ -29,7 +33,7 @@ class WebDslTest extends FlatSpec {
         dsl.replace("<position>", "1").replace("<duration>", "2")
       } foreach { dsl => 
         StepKeyword.values foreach { keyword =>
-          interpreter.evaluate(Step(keyword, dsl), env)
+          interpreter.evaluate(Step(keyword, dsl.replaceAll("<step>", "I refresh the current page")), env)
         } 
       }
     }
