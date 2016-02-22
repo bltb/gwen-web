@@ -57,3 +57,5 @@ mappings in (Compile, packageBin) ++= Seq(
   file("CHANGELOG") -> "CHANGELOG"
 )
 
+coverageEnabled := true
+
